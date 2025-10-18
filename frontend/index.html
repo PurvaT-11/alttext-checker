@@ -160,7 +160,7 @@
       }, 300);
 
       try {
-        const res = await fetch(`http://127.0.0.1:8000/check?url=${encodeURIComponent(url)}`);
+        const res = await fetch(`https://alttext-checker-backend.onrender.com/check?url=${encodeURIComponent(url)}`);
         const data = await res.json();
 
         clearInterval(fakeProgress);
