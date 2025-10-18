@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alt Text Checker</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --bg: #f9fafb;
+      --text: #111827;
+      --border: #e5e7eb;
+      --error: #dc2626;
+      --success: #16a34a;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 70%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    button {
+      padding: 10px 18px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    #progress {
+      margin-top: 1rem;
+      width: 100%;
+      background-color: var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      height: 14px;
+      display: none;
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--primary-light);
+    }
+
+    tr:nth-child(even) {
+      background-color: #f1f5f9;
+    }
+
+    .status-error {
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    .status-ok {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.9rem;
+      margin-top: 1.5rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Alt Text Checker</h1>
+    <div>
+      <input type="text" id="url" placeholder="Enter website URL (e.g., https://example.com)">
+      <button onclick="analyze()">Analyze</button>
+    </div>
+
+    <div id="progress">
+      <div id="progress-bar"></div>
+    </div>
+
+    <table id="results"></table>
+    <div class="footer">Built with ❤️ for accessibility</div>
+  </div>
+
+  <script>
+    async function analyze() {
+      const url = document.getElementById('url').value.trim();
+      if (!url) return alert("Please enter a valid URL!");
+
+      const progress = document.getElementById('progress');
+      const progressBar = document.getElementById('progress-bar');
+      const table = document.getElementById('results');
+      table.innerHTML = "";
+      progress.style.display = "block";
+      progressBar.style.width = "0%";
+
+      let progressValue = 0;
+      const fakeProgress = setInterval(() => {
+        if (progressValue < 90) {
+          progressValue += 5;
+          progressBar.style.width = progressValue + "%";
+        }
+      }, 300);
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/check?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+
+        clearInterval(fakeProgress);
+        progressBar.style.width = "100%";
+        setTimeout(() => progress.style.display = "none", 500);
+
+        table.innerHTML = "<tr><th>Image URL</th><th>Alt Text</th><th>Status</th><th>Suggestion</th></tr>";
+        data.results.forEach(r => {
+          const statusClass = r.status === "Missing" ? "status-error" : "status-ok";
+          table.innerHTML += `
+            <tr>
+              <td><a href="${r.image_url}" target="_blank">${r.image_url}</a></td>
+              <td>${r.alt_text || '(none)'}</td>
+              <td class="${statusClass}">${r.status}</td>
+              <td>${r.suggestion}</td>
+            </tr>`;
+        });
+      } catch (err) {
+        clearInterval(fakeProgress);
+        progress.style.display = "none";
+        alert("❌ Failed to fetch data. Please ensure your backend is running.");
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
